@@ -23,7 +23,6 @@ public class ConfirmationTokenService {
     }
 
     public Optional<ConfirmationToken> getToken(String token) {
-        Optional<ConfirmationToken> confirmationToken = confirmationTokenRepository.findByToken(token);
-        return confirmationToken;
+        return confirmationTokenRepository.findByToken(token);
     }
 }
