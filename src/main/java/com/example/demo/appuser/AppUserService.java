@@ -3,7 +3,6 @@ package com.example.demo.appuser;
 import com.example.demo.registration.token.ConfirmationToken;
 import com.example.demo.registration.token.ConfirmationTokenService;
 import lombok.AllArgsConstructor;
-import net.bytebuddy.asm.Advice;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -31,8 +30,6 @@ public class AppUserService implements UserDetailsService {
         Optional<AppUser> user = appUserRepository.findByEmail(appUser.getEmail());
         boolean userExists = user.isPresent();
         if(userExists) {
-            // TODO: check if it matches all attributes.
-            // TODO: find if email not confirmed send confirmation email again.
             if(user.get().getPassword().equals(bCryptPasswordEncoder.encode(appUser.getPassword()))){
                 if(!user.get().isCredentialsNonExpired() && confirmationTokenService.findUsers(user.get()).get().getExpiresAt().isBefore(LocalDateTime.now())){
                     String token = UUID.randomUUID().toString();
@@ -61,8 +58,6 @@ public class AppUserService implements UserDetailsService {
                 appUser
         );
         confirmationTokenService.saveConfirmationToken(confirmationToken);
-
-        // TODO: Send Email
         return token;
     }
 
