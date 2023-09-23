@@ -53,10 +53,11 @@ public class RegistrationService {
         if(expiredAt.isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Token has expired!!");
         }
-
-        confirmationTokenService.setConfirmedAt(token);
-        appUserService.enableAppUser(confirmationToken.getAppUser().getEmail());
-        return "Confirmed!!!";
+        else {
+            confirmationTokenService.setConfirmedAt(token);
+            appUserService.enableAppUser(confirmationToken.getAppUser().getEmail());
+            return "Confirmed!!!";
+        }
     }
 
     private String buildEmail(String name, String link) {

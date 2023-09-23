@@ -3,6 +3,7 @@ package com.example.demo.appuser;
 import com.example.demo.registration.token.ConfirmationToken;
 import com.example.demo.registration.token.ConfirmationTokenService;
 import lombok.AllArgsConstructor;
+import net.bytebuddy.asm.Advice;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -10,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,10 +28,26 @@ public class AppUserService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(String.format(USER_NOT_FOUND_MSG, email)));
     }
     public String signUpUser(AppUser appUser) {
-        boolean userExists = appUserRepository.findByEmail(appUser.getEmail())
-                .isPresent();
+        Optional<AppUser> user = appUserRepository.findByEmail(appUser.getEmail());
+        boolean userExists = user.isPresent();
         if(userExists) {
-            throw new IllegalStateException("Email already taken!");
+            // TODO: check if it matches all attributes.
+            // TODO: find if email not confirmed send confirmation email again.
+            if(user.get().getPassword().equals(bCryptPasswordEncoder.encode(appUser.getPassword()))){
+                if(!user.get().isCredentialsNonExpired() && confirmationTokenService.findUsers(user.get()).get().getExpiresAt().isBefore(LocalDateTime.now())){
+                    String token = UUID.randomUUID().toString();
+                    ConfirmationToken confirmationToken = new ConfirmationToken(
+                            token,
+                            LocalDateTime.now(),
+                            LocalDateTime.now().plusMinutes(15),
+                            appUser
+                    );
+                    confirmationTokenService.saveConfirmationToken(confirmationToken);
+                    return token;
+                }
+                throw new IllegalStateException("Email already sent, clock on the link provided or wait for it to expire.");
+            }
+            throw new IllegalStateException("Email already taken by another user!");
         }
         String encodedPassword = bCryptPasswordEncoder.encode(appUser.getPassword());
         appUser.setPassword(encodedPassword);
